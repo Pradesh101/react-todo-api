@@ -30,11 +30,27 @@ app.post("/api/todos", (req, res) => {
   const newTodo = {
     id: Date.now(), // Unique ID for each todo
     task: task,
-    editable: false,
   };
   todos.push(newTodo);
   res.status(201).json(newTodo);
   console.log(todos);
+});
+
+app.put("/api/todos/:id", (req, res) => {
+  const { id } = req.params;
+  const { task } = req.body;
+  console.log(`Received PUT request for todo id: ${id}`);
+  console.log(`Current todos:`, todos);
+
+  const todo = todos.find((t) => t.id === Number(id));
+  if (todo) {
+    todo.task = task || todo.task;
+    console.log(`Updated todo:`, todo);
+    res.json(todo);
+  } else {
+    console.log(`Todo with id ${id} not found`);
+    res.status(404).json({ error: "Todo not found" });
+  }
 });
 
 // Delete a todo by ID
