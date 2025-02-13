@@ -9,9 +9,6 @@ const TodoList = () => {
   const API_URL = "http://localhost:3000/api/todos";
 
   const [todoValue, setTodo] = useState([]);
-  // const createTodo = (todo) => {
-  //   setTodo([...todoValue, { id: uuidv4(), task: todo, isEditing: false }]);
-  // };
 
   useEffect(() => {
     fetchTodos();
@@ -21,7 +18,12 @@ const TodoList = () => {
     try {
       const response = await axios.get(API_URL);
       console.log("Fetched todos:", response.data);
-      setTodo(response.data); // Remove the extra array brackets
+      // Ensure each todo has an 'id' property
+      const todosWithIds = response.data.map((todo) => ({
+        ...todo,
+        id: todo.id || Date.now(), // Use existing id or generate a new one
+      }));
+      setTodo(todosWithIds); // Remove the extra array brackets
     } catch (error) {
       console.error("Error fetching todos:", error);
     }
@@ -49,29 +51,19 @@ const TodoList = () => {
 
   const updateTodo = async (id, updatedTask) => {
     try {
-      console.log(`Attempting to update todo with id: ${id}`);
-      console.log(`Updated task: ${updatedTask}`);
-
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task: updatedTask }),
+      const response = await axios.put(`${API_URL}/${id}`, {
+        task: updatedTask,
       });
 
       console.log(`Response status: ${response.status}`);
+      console.log("Updated todo:", response.data);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `HTTP error! status: ${response.status}, message: ${errorText}`
-        );
-      }
-
-      const updatedTodo = await response.json();
-      console.log("Updated todo:", updatedTodo);
       await fetchTodos();
     } catch (error) {
-      console.error("Error updating todo:", error);
+      console.error(
+        "Error updating todo:",
+        error.response ? error.response.data : error.message
+      );
     }
   };
 
@@ -103,18 +95,6 @@ const TodoList = () => {
         Todo App
       </div>
       <Form createTodo={createTodo} />
-      {/* {todoValue.map((todo, idx) =>
-        todo.isEditing ? (
-          <Edit key={idx} updateTodo={editTask} task={todo} />
-        ) : (
-          <Todo
-            task={todo}
-            key={idx}
-            deleteTodo={deleteTodo}
-            updateTodo={updateTodo}
-          />
-        )
-      )} */}
       {todoValue.map((todo, index) => (
         <Todo
           key={index}
